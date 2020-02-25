@@ -31,6 +31,7 @@ void print_grid(int X_MAX, int Y_MAX);
 
 int main()
 {
+	//dummy comment for test
 	int ch;
 	int xpos = 10;
 	int ypos = 10;
