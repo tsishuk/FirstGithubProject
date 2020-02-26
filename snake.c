@@ -33,6 +33,8 @@ int main()
 {
 	//dummy comment for test
 	// Dummy comment second branch
+	// Another one for longer history og commits
+	
 	int ch;
 	int xpos = 10;
 	int ypos = 10;
