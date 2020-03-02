@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <termios.h>
 #include <unistd.h>
+#include <pthread.h>
+#include <stdlib.h>
 
 #define XMAX 20
 #define YMAX 40
@@ -30,12 +32,26 @@ int mygetch( ) {
 void clrscr(void);
 void print_grid(int X_MAX, int Y_MAX);
 
+
+void* thread_func(void* arg){
+	while(1){
+		printf("Jaja\n");
+		usleep(1000000);
+	}
+}
+
+
 int main()
 {
-	//dummy comment for test
+	pthread_t* tid;
+	pthread_cond_t* cond;
 	int ch;
 	int xpos = 10;
 	int ypos = 20;
+	// allocate memory to cond (conditional variable),  
+    // thread id's and array of size threads 
+    cond = (pthread_cond_t*)malloc(sizeof(pthread_cond_t)); 
+    tid = (pthread_t*)malloc(sizeof(pthread_t)); 
 
 	printf ("\e[?25l");	//set cursor INVISIBLE
 	clrscr();
@@ -43,7 +59,8 @@ int main()
 	//printf("\033[15;20HHello");	//Text print example
 	printf ("\e[?25h");	//set cursor VISIBLE
 	printf("\033[%d;%dH ",xpos,ypos);
-
+	sleep(1);
+	pthread_create(tid, NULL, thread_func, NULL);
 	
 	while(1){
 		ch = mygetch();
