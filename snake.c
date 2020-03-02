@@ -1,6 +1,18 @@
+/*************************************************************************
+*
+* Purpose: Clear the screen with VT100 escape codes. This can be done
+* with conio.h on PCs - non standard code. Or curses.h, bit of
+* a fag...
+* Author: M.J. Leslie
+* Date: 22-Jun-94
+*
+******************************************************************/
 #include <stdio.h>
 #include <termios.h>
 #include <unistd.h>
+
+#define XMAX 20
+#define YMAX 40
 
 int mygetch( ) {
 	struct termios oldt,
@@ -15,17 +27,6 @@ int mygetch( ) {
 	return ch;
 }
 
-
-/*************************************************************************
-*
-* Purpose: Clear the screen with VT100 escape codes. This can be done
-* with conio.h on PCs - non standard code. Or curses.h, bit of
-* a fag...
-* Author: M.J. Leslie
-* Date: 22-Jun-94
-*
-******************************************************************/
-
 void clrscr(void);
 void print_grid(int X_MAX, int Y_MAX);
 
@@ -34,26 +35,19 @@ int main()
 	//dummy comment for test
 	int ch;
 	int xpos = 10;
-	int ypos = 10;
+	int ypos = 20;
 
 	printf ("\e[?25l");	//set cursor INVISIBLE
 	clrscr();
-	print_grid(15,30);
-	printf("First()\n");
-	sleep(1);
-	printf("\033[15;20HHello");
-	printf("\033[%d;%dHHello",xpos,ypos);
-	xpos = 25;
-	ypos = 15;
-	printf("\033[%d;%dHGoodbye",xpos,ypos);
-	fflush(NULL);
-	printf("The end");
+	print_grid(XMAX,YMAX);
+	//printf("\033[15;20HHello");	//Text print example
 	printf ("\e[?25h");	//set cursor VISIBLE
+	printf("\033[%d;%dH ",xpos,ypos);
 
 	
 	while(1){
 		ch = mygetch();
-		if (ch=='z')
+		if (ch=='p')
 			break;
 		else if (ch == 'w'){
 			printf("\033[%d;%dH ",xpos,ypos);
