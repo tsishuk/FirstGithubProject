@@ -16,6 +16,11 @@
 #define XMAX 20
 #define YMAX 40
 
+int direction;
+int xpos = 10;
+int ypos = 20;
+int my_mutex = 0;
+
 int mygetch( ) {
 	struct termios oldt,
 	newt;
@@ -35,8 +40,28 @@ void print_grid(int X_MAX, int Y_MAX);
 
 void* thread_func(void* arg){
 	while(1){
-		printf("Jaja\n");
-		usleep(1000000);
+		my_mutex = 0;
+		printf("\033[%d;%dH ",xpos,ypos);	// Clear current position symbol
+		switch(direction){
+			case 3:	ypos++;
+					break;
+			case 6:	xpos++;
+					break;
+			case 9:	ypos--;
+					break;
+			case 0:	xpos--;
+					break;
+		}
+		printf("\033[%d;%dH       ",21,42);	// Clear previous X:
+		printf("\033[%d;%dH",21,42);		// Set cursor on the current position
+		printf("X:%d",xpos);
+		printf("\033[%d;%dH       ",22,42);	// Clear previous Y:
+		printf("\033[%d;%dH",22,42);		
+		printf("Y:%d",ypos);
+		printf("\033[%d;%dH0",xpos,ypos);	// Print new "HEAD" of snake
+		fflush(stdout);		// force clear console buffer
+		my_mutex = 1;
+		usleep(500000);
 	}
 }
 
@@ -45,9 +70,9 @@ int main()
 {
 	pthread_t* tid;
 	pthread_cond_t* cond;
+	direction = 3;
 	int ch;
-	int xpos = 10;
-	int ypos = 20;
+
 	// allocate memory to cond (conditional variable),  
     // thread id's and array of size threads 
     cond = (pthread_cond_t*)malloc(sizeof(pthread_cond_t)); 
@@ -56,7 +81,6 @@ int main()
 	printf ("\e[?25l");	//set cursor INVISIBLE
 	clrscr();
 	print_grid(XMAX,YMAX);
-	//printf("\033[15;20HHello");	//Text print example
 	printf ("\e[?25h");	//set cursor VISIBLE
 	printf("\033[%d;%dH ",xpos,ypos);
 	sleep(1);
@@ -66,26 +90,18 @@ int main()
 		ch = mygetch();
 		if (ch=='p')
 			break;
-		else if (ch == 'w'){
-			printf("\033[%d;%dH ",xpos,ypos);
-			xpos--;
-			printf("\033[%d;%dH0",xpos,ypos);
+		if (my_mutex){
+		switch (ch){
+			case 'w': direction = 0;
+					  break;
+			case 'd': direction = 3;
+					  break;
+			case 's': direction = 6;
+					  break;
+			case 'a': direction = 9;
+					  break;					  					  
 		}
-		else if (ch == 's'){
-			printf("\033[%d;%dH ",xpos,ypos);
-			xpos++;
-			printf("\033[%d;%dH0",xpos,ypos);
-		}
-		else if (ch == 'a'){
-			printf("\033[%d;%dH ",xpos,ypos);
-			ypos--;
-			printf("\033[%d;%dH0",xpos,ypos);
-		}
-		else if (ch == 'd'){
-			printf("\033[%d;%dH ",xpos,ypos);
-			ypos++;
-			printf("\033[%d;%dH0",xpos,ypos);
-		}
+		}	
 	}
 	
 
