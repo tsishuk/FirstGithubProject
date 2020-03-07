@@ -30,7 +30,10 @@ struct Point{
 	int Y;
 };
 
-struct Point snake = {20,10};
+struct Point snake[XMAX*YMAX];
+//int snake_length;
+struct Point elements[XMAX*YMAX];
+
 
 int mygetch( ) {
 	struct termios oldt,
@@ -52,10 +55,10 @@ void print_grid(int X_MAX, int Y_MAX);
 void printSnakeInfo(void){
 	printf("\033[%d;%dH       ",21,42);	// Clear previous X:
 	printf("\033[%d;%dH",21,42);		// Set cursor on the current position
-	printf("X:%d",snake.X);				// Print X:
+	printf("X:%d",snake[0].X);				// Print X:
 	printf("\033[%d;%dH       ",22,42);	// Clear previous Y:
 	printf("\033[%d;%dH",22,42);		
-	printf("Y:%d",snake.Y);
+	printf("Y:%d",snake[0].Y);
 	printf("\033[%d;%dH           ",23,42);	// Clear previous length:
 	printf("\033[%d;%dH",23,42);		
 	printf("Length:%d",snake_length);
@@ -81,24 +84,24 @@ void generateFruit(void){
 void* thread_func(void* arg){
 	while(1){
 		my_mutex = 0;
-		printf("\033[%d;%dH ",snake.X,snake.Y);	// Clear current position symbol
+		printf("\033[%d;%dH ",snake[0].X,snake[0].Y);	// Clear current position symbol
 		switch(direction){
-			case 3:	snake.Y++;
+			case 3:	snake[0].Y++;
 					break;
-			case 6:	snake.X++;
+			case 6:	snake[0].X++;
 					break;
-			case 9:	snake.Y--;
+			case 9:	snake[0].Y--;
 					break;
-			case 0:	snake.X--;
+			case 0:	snake[0].X--;
 					break;
 		}
-		if ((snake.X==fruit_x_pos)&&(snake.Y==fruit_y_pos)){
+		if ((snake[0].X==fruit_x_pos)&&(snake[0].Y==fruit_y_pos)){
 			snake_length++;
 			generateFruit();
 		}
 		printSnakeInfo();
 
-		printf("\033[%d;%dH0",snake.X,snake.Y);	// Print new "HEAD" of snake
+		printf("\033[%d;%dH0",snake[0].X,snake[0].Y);	// Print new "HEAD" of snake
 
 
 		// counter++;
@@ -136,8 +139,10 @@ int main()
 	printf ("\e[?25h");	//set cursor VISIBLE
 	fruit_x_pos = 2+(rand()%(XMAX-1));
 	fruit_y_pos = 2+(rand()%(YMAX-1));
+	snake[0].X = 10;
+	snake[0].Y = 20;
 	printf("\033[%d;%dHF",fruit_x_pos,fruit_y_pos);		// Paint new fruit
-	printf("\033[%d;%dH ",snake.X,snake.Y);
+	printf("\033[%d;%dH ",snake[0].X,snake[0].Y);
 	sleep(1);
 	pthread_create(tid, NULL, thread_func, NULL);
 	
