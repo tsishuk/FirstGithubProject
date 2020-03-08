@@ -1,12 +1,3 @@
-/*************************************************************************
-*
-* Purpose: Clear the screen with VT100 escape codes. This can be done
-* with conio.h on PCs - non standard code. Or curses.h, bit of
-* a fag...
-* Author: M.J. Leslie
-* Date: 22-Jun-94
-*
-******************************************************************/
 #include <stdio.h>
 #include <termios.h>
 #include <unistd.h>
@@ -14,13 +5,11 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define XMAX 20
-#define YMAX 40
+#define XMAX 5
+#define YMAX 5
 
 int direction;
-//int snake_x_pos = 10;
-//int snake_y_pos = 20;
-int snake_length = 1;
+int snake_length;
 int my_mutex = 0;
 int counter = 0;
 int fruit_x_pos=2, fruit_y_pos=2;
@@ -30,9 +19,14 @@ struct Point{
 	int Y;
 };
 
+struct Element{
+	int X;
+	int Y;
+	struct Element* next;
+};
+
 struct Point snake[XMAX*YMAX];
-//int snake_length;
-struct Point elements[XMAX*YMAX];
+struct Element elements[XMAX*YMAX];
 
 
 int mygetch( ) {
@@ -47,6 +41,52 @@ int mygetch( ) {
 	tcsetattr( STDIN_FILENO, TCSANOW, &oldt );
 	return ch;
 }
+
+
+void elementsInit(void)
+{
+	int counter=0;
+	int i,j;
+	for (i=2;i<(XMAX+2);i++)
+		for (j=2;j<(YMAX+2);j++){
+			elements[counter].X = i;
+			elements[counter].Y = j;
+			elements[counter].next = &elements[counter+1];
+			counter++;
+		}
+}
+
+
+void elementsPrint(void)
+{
+	int i;
+	int indeks_X;
+	int indeks_Y;
+	int indeks;
+	int begin = 0;
+	struct Element* next_element = &elements[0];
+	const int max = XMAX*YMAX - snake_length;
+
+	for (i=0;i<snake_length;i++){
+		indeks_X = snake[i].X-2;
+		indeks_Y = snake[i].Y-2;
+		indeks = indeks_X*XMAX + indeks_Y;
+		printf("deleted indeks = %d, X:%d, Y:%d\n",indeks, elements[indeks].X, elements[indeks].Y);
+		
+		if (indeks == begin)
+			begin++;
+		else {
+			elements[indeks-1].next = &elements[indeks+1];
+		}
+		
+	}
+
+	for (i=begin;i<(max+begin);i++){
+		printf("X:%d, Y:%d indeks = %d\n", (*next_element).X, (*next_element).Y, i);
+		next_element = (*next_element).next;
+	}
+}
+
 
 void clrscr(void);
 void print_grid(int X_MAX, int Y_MAX);
@@ -65,14 +105,6 @@ void printSnakeInfo(void){
 }
 
 
-// void printFruitXY(void){
-// 	printf("\033[%d;%dH       ",15,42);	// Clear previous X:
-// 	printf("\033[%d;%dH",15,42);		// Set cursor on the current position
-// 	printf("FrX:%d",fruit_x_pos);				// Print X:
-// 	printf("\033[%d;%dH       ",16,42);	// Clear previous Y:
-// 	printf("\033[%d;%dH",16,42);		
-// 	printf("FrY:%d",fruit_y_pos);
-// }
 
 void generateFruit(void){
 	fruit_x_pos = 2+(rand()%(XMAX-1));
@@ -81,116 +113,21 @@ void generateFruit(void){
 }
 
 
-void* thread_func(void* arg){
-	while(1){
-		my_mutex = 0;
-		printf("\033[%d;%dH ",snake[0].X,snake[0].Y);	// Clear current position symbol
-		switch(direction){
-			case 3:	snake[0].Y++;
-					break;
-			case 6:	snake[0].X++;
-					break;
-			case 9:	snake[0].Y--;
-					break;
-			case 0:	snake[0].X--;
-					break;
-		}
-		if ((snake[0].X==fruit_x_pos)&&(snake[0].Y==fruit_y_pos)){
-			snake_length++;
-			generateFruit();
-		}
-		printSnakeInfo();
-
-		printf("\033[%d;%dH0",snake[0].X,snake[0].Y);	// Print new "HEAD" of snake
-
-
-		// counter++;
-		// if (counter == 5){
-		// 	counter = 0;
-		// 	printf("\033[%d;%dH ",fruit_x_pos,fruit_y_pos);		// Erase old fruit
-		// 	fruit_x_pos = 2+(rand()%(XMAX-1));
-		// 	fruit_y_pos = 2+(rand()%(YMAX-1));
-		// 	printf("\033[%d;%dHF",fruit_x_pos,fruit_y_pos);		// Paint new fruit
-		// 	//printFruitXY();
-		// }
-
-		fflush(stdout);						// force clear console buffer
-		my_mutex = 1;
-		usleep(500000);
-	}
-}
-
 
 int main()
 {
-	pthread_t* tid;
-	pthread_cond_t* cond;
-	direction = 3;
-	int ch;
-	srand(time(0));
-	// allocate memory to cond (conditional variable),  
-    // thread id's and array of size threads 
-    cond = (pthread_cond_t*)malloc(sizeof(pthread_cond_t)); 
-    tid = (pthread_t*)malloc(sizeof(pthread_t)); 
+	printf("Hello world\n");
+	snake[0].X = 3;
+	snake[0].Y = 2;
 
-	printf ("\e[?25l");	//set cursor INVISIBLE
-	clrscr();
-	print_grid(XMAX,YMAX);
-	printf ("\e[?25h");	//set cursor VISIBLE
-	fruit_x_pos = 2+(rand()%(XMAX-1));
-	fruit_y_pos = 2+(rand()%(YMAX-1));
-	snake[0].X = 10;
-	snake[0].Y = 20;
-	printf("\033[%d;%dHF",fruit_x_pos,fruit_y_pos);		// Paint new fruit
-	printf("\033[%d;%dH ",snake[0].X,snake[0].Y);
-	sleep(1);
-	pthread_create(tid, NULL, thread_func, NULL);
-	
-	while(1){
-		ch = mygetch();
-		if (ch=='p')
-			break;
-		if (my_mutex){
-		switch (ch){
-			case 'w': direction = 0;
-					  break;
-			case 'd': direction = 3;
-					  break;
-			case 's': direction = 6;
-					  break;
-			case 'a': direction = 9;
-					  break;					  					  
-		}
-		}	
-	}
-	
+	snake[1].X = 4;
+	snake[1].Y = 2;
+
+	snake[2].X = 4;
+	snake[2].Y = 3;
+	snake_length = 3;
+	elementsInit();
+	elementsPrint();
 
 	return 0;
 }
-
-
-void clrscr(void)
-{
-	printf("\033[2J"); 	/* Clear the entire screen. */
-	printf("\033[0;0f");/* Move cursor to the top left hand corner*/
-}
-
-
-void print_grid(int X_MAX, int Y_MAX){
-	int x,y;
-	for (x=0;x<=X_MAX;x++){
-		for (y=0;y<=Y_MAX;y++){
-			if (x==0 || x==X_MAX){
-					printf("-");
-			}
-			else {
-				if (y==0 || y==Y_MAX)
-					printf("|");
-				else
-					printf(" ");	 
-			}
-		}
-		printf("\n");
-	}
-}
-
