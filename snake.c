@@ -44,31 +44,26 @@ int mygetch( ) {
 }
 
 
-void elementsInit(void)
-{
-	int counter=0;
-	int i,j;
-	for (i=2;i<(XMAX+2);i++)
-		for (j=2;j<(YMAX+2);j++){
-			elements[counter].X = i;
-			elements[counter].Y = j;
-			elements[counter].next = &elements[counter+1];
-            elements[counter].previous = &elements[counter-1];
-			counter++;
-		}
-}
-
-
 void elementsPrint(void)
 {
-	int i;
+	int i,j;
 	int indeks_X;
 	int indeks_Y;
 	int indeks;
 	int begin = 0;
 	struct Element* next_element = &elements[0];
 	const int max = XMAX*YMAX - snake_length;
-
+    
+    // fill elements with init values
+    for (i=2;i<(XMAX+2);i++)
+        for (j=2;j<(YMAX+2);j++){
+            elements[counter].X = i;
+            elements[counter].Y = j;
+            elements[counter].next = &elements[counter+1];
+            elements[counter].previous = &elements[counter-1];
+            counter++;
+        }
+    // deleting snake coords from elements
 	for (i=0;i<snake_length;i++){
 		indeks_X = snake[i].X-2;
 		indeks_Y = snake[i].Y-2;
@@ -80,15 +75,12 @@ void elementsPrint(void)
             next_element = (*next_element).next;
         }
 		else {
-            // bad work need previous pointer
-			//elements[indeks-1].next = &elements[indeks+1];
             (*elements[indeks].previous).next = elements[indeks].next;
             (*elements[indeks].next).previous = elements[indeks].previous;
-            //*previous.next = next;
-            //*next.previous = previous;
 		}
 	}
 
+    // print result
 	for (i=begin;i<(max+begin);i++){
 		printf("X:%d, Y:%d indeks = %d\n", (*next_element).X, (*next_element).Y, i);
 		next_element = (*next_element).next;
@@ -134,11 +126,13 @@ int main()
 	snake[2].X = 4;
 	snake[2].Y = 3;
     
-    snake[3].X = 2;
-    snake[3].Y = 2;
+    snake[3].X = 5;
+    snake[3].Y = 3;
+    
+    snake[4].X = 5;
+    snake[4].Y = 4;
  
-	snake_length = 4;
-	elementsInit();
+	snake_length = 5;
 	elementsPrint();
 
 	return 0;
