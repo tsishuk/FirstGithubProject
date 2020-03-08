@@ -23,6 +23,7 @@ struct Element{
 	int X;
 	int Y;
 	struct Element* next;
+    struct Element* previous;
 };
 
 struct Point snake[XMAX*YMAX];
@@ -52,6 +53,7 @@ void elementsInit(void)
 			elements[counter].X = i;
 			elements[counter].Y = j;
 			elements[counter].next = &elements[counter+1];
+            elements[counter].previous = &elements[counter-1];
 			counter++;
 		}
 }
@@ -73,12 +75,18 @@ void elementsPrint(void)
 		indeks = indeks_X*XMAX + indeks_Y;
 		printf("deleted indeks = %d, X:%d, Y:%d\n",indeks, elements[indeks].X, elements[indeks].Y);
 		
-		if (indeks == begin)
+        if (indeks == begin){
 			begin++;
+            next_element = (*next_element).next;
+        }
 		else {
-			elements[indeks-1].next = &elements[indeks+1];
+            // bad work need previous pointer
+			//elements[indeks-1].next = &elements[indeks+1];
+            (*elements[indeks].previous).next = elements[indeks].next;
+            (*elements[indeks].next).previous = elements[indeks].previous;
+            //*previous.next = next;
+            //*next.previous = previous;
 		}
-		
 	}
 
 	for (i=begin;i<(max+begin);i++){
@@ -125,7 +133,11 @@ int main()
 
 	snake[2].X = 4;
 	snake[2].Y = 3;
-	snake_length = 3;
+    
+    snake[3].X = 2;
+    snake[3].Y = 2;
+ 
+	snake_length = 4;
 	elementsInit();
 	elementsPrint();
 
