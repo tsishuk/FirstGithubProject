@@ -14,9 +14,9 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define XMAX 20
-#define YMAX 40
-#define MAX_COORD_SIZE 800
+#define XMAX 10
+#define YMAX 20
+#define MAX_COORD_SIZE 200
 
 int direction;
 int snake_length = 1, tail, head, head_old;
@@ -89,20 +89,18 @@ void* thread_func(void* arg){
 		head_old = head;
 		x = snake[head].X;
 		y = snake[head].Y;
-		printf("\033[%d;%dH ",snake[tail].X,snake[tail].Y);	// Clear previous tail
-		tail++;	
 		head++;	
-		if (head >= MAX_COORD_SIZE)
+		if (head >= (MAX_COORD_SIZE-1))
 			head = 0;
 		snake[head] = snake[head_old];
 		switch(direction){
-			case 3:	snake[head].Y++;
+			case 3:	(y==YMAX) ? (snake[head].Y = 2) : (snake[head].Y++);
 					break;
-			case 6:	snake[head].X++;
+			case 6:	(x==XMAX) ? (snake[head].X = 2) : (snake[head].X++);
 					break;
-			case 9:	snake[head].Y--;
+			case 9:	(y==2) ? (snake[head].Y = YMAX) : (snake[head].Y--);
 					break;
-			case 0:	snake[head].X--;
+			case 0:	(x==2) ? (snake[head].X = XMAX) : (snake[head].X--);
 					break;
 		}
 
@@ -110,10 +108,15 @@ void* thread_func(void* arg){
 			snake_length++;
 			generateFruit();
 		}
-		printSnakeInfo();
+		else {
+			printf("\033[%d;%dH ",snake[tail].X,snake[tail].Y);	// Clear previous tail if no fruit eat
+			tail++;
+			if (tail >= (MAX_COORD_SIZE-1))
+				tail = 0;
+		}
 
+		//printSnakeInfo();
 		printf("\033[%d;%dH0",snake[head].X,snake[head].Y);	// Print new "HEAD" of snake
-
 
 		fflush(stdout);										// force clear console buffer
 		my_mutex = 1;
@@ -130,8 +133,8 @@ int main()
 	int ch;
 	srand(time(0));
 
-	snake[0].X = 20;
-	snake[0].Y = 10;
+	snake[0].X = 5;
+	snake[0].Y = 5;
 
 	// allocate memory to cond (conditional variable),  
     // thread id's and array of size threads 
