@@ -14,14 +14,15 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define XMAX 10
-#define YMAX 20
-#define MAX_COORD_SIZE 200
+#define XMAX 20
+#define YMAX 40
+#define MAX_COORD_SIZE (XMAX*YMAX)
 
 int direction;
 int snake_length = 1, tail, head, head_old;
 int my_mutex = 0;
 int counter = 0;
+int CHECK = 1;
 
 
 struct Point{
@@ -81,10 +82,38 @@ void generateFruit(void){
 }
 
 
+void* inputThreadFunc(void* arg){
+	int ch;
+
+	while(CHECK){
+		ch = mygetch();
+
+		if (ch=='p'){
+			CHECK=0;
+			break;
+		}
+		if (my_mutex){
+			switch (ch){
+				case 'w': direction = 0;
+						  break;
+				case 'd': direction = 3;
+						  break;
+				case 's': direction = 6;
+						  break;
+				case 'a': direction = 9;
+						  break;					  					  
+			}
+		}
+		usleep(10000);	
+	}
+}
+
+
 void* thread_func(void* arg){
 	int x,y;
+	int i,j;
 
-	while(1){
+	while(CHECK){
 		my_mutex = 0;
 		head_old = head;
 		x = snake[head].X;
@@ -104,33 +133,59 @@ void* thread_func(void* arg){
 					break;
 		}
 
-		if ((snake[head].X==fruit.X)&&(snake[head].Y==fruit.Y)){
-			snake_length++;
-			generateFruit();
-		}
-		else {
-			printf("\033[%d;%dH ",snake[tail].X,snake[tail].Y);	// Clear previous tail if no fruit eat
-			tail++;
-			if (tail >= (MAX_COORD_SIZE-1))
-				tail = 0;
-		}
+		// // Check for self eating
+		for (i=tail;i!=head;i++)
+			for (j=i+1;j!=head;j++){
+					if (i==j)
+						continue;
+					if (i>MAX_COORD_SIZE)
+						i=0;
+					if (j>MAX_COORD_SIZE) 
+						j=0;
+					if ((snake[i].X==snake[j].X)&&(snake[i].Y==snake[j].Y)){
+						if (CHECK){
+							CHECK = 0;
+							printf("\bX");
+							printf("\033[%d;%dH ",22,10);
+							printf("GAME OVER\n");
+							fflush(stdout);										// force clear console buffer
+							break;
+						}
+					}
+			}
 
-		//printSnakeInfo();
-		printf("\033[%d;%dH0",snake[head].X,snake[head].Y);	// Print new "HEAD" of snake
+		if (CHECK == 1){
+			// If HEAD == FRUIT (eat fruit)
+			if ((snake[head].X==fruit.X)&&(snake[head].Y==fruit.Y)){
+				snake_length++;
+				generateFruit();
+			}
+			// Erase previous snake tail
+			else {
+				printf("\033[%d;%dH ",snake[tail].X,snake[tail].Y);	// Clear previous tail if no fruit eat
+				tail++;
+				if (tail >= (MAX_COORD_SIZE-1))
+					tail = 0;
+			}
 
-		fflush(stdout);										// force clear console buffer
-		my_mutex = 1;
-		usleep(100000);
+			// Print new HEAD of snake
+			printf("\033[%d;%dH0",snake[head].X,snake[head].Y);	// Print new "HEAD" of snake
+
+			fflush(stdout);										// force clear console buffer
+			my_mutex = 1;
+			usleep(100000);
+		}
 	}
 }
 
 
 int main()
 {
+	struct termios oldt,newt;
 	pthread_t* tid;
+	pthread_t* tid2;
 	pthread_cond_t* cond;
 	direction = 3;
-	int ch;
 	srand(time(0));
 
 	snake[0].X = 5;
@@ -139,7 +194,8 @@ int main()
 	// allocate memory to cond (conditional variable),  
     // thread id's and array of size threads 
     cond = (pthread_cond_t*)malloc(sizeof(pthread_cond_t)); 
-    tid = (pthread_t*)malloc(sizeof(pthread_t)); 
+    tid  = (pthread_t*)malloc(sizeof(pthread_t)); 
+    tid2 = (pthread_t*)malloc(sizeof(pthread_t)); 
 
 	printf ("\e[?25l");	//set cursor INVISIBLE
 	clrscr();
@@ -149,30 +205,27 @@ int main()
 	fruit.Y = 2+(rand()%(YMAX-1));
 	printf("\033[%d;%dHF",fruit.X,fruit.Y);		// Paint new fruit
 	printf("\033[%d;%dH ",snake[0].X,snake[0].Y);
-	sleep(1);
+	//sleep(1);
+
 	pthread_create(tid, NULL, thread_func, NULL);
+
+	pthread_create(tid2, NULL, inputThreadFunc, NULL);
 	
 	while(1){
-		ch = mygetch();
-		if (ch=='p'){
+
+		if (CHECK == 0){
 			pthread_cancel(*tid);
+			pthread_cancel(*tid2);
+			printf("\033[%d;%dH ",23,10);
+			printf("END OF GAME\n");
 			break;
 		}
-		if (my_mutex){
-		switch (ch){
-			case 'w': direction = 0;
-					  break;
-			case 'd': direction = 3;
-					  break;
-			case 's': direction = 6;
-					  break;
-			case 'a': direction = 9;
-					  break;					  					  
-		}
-		}
-		usleep(10000);	
 	}
-	
+
+	// Force make console symbols visible after thread kill with getchar()
+	tcgetattr( STDIN_FILENO, &oldt );
+	oldt.c_lflag |= ( ICANON | ECHO );
+	tcsetattr( STDIN_FILENO, TCSANOW, &oldt );
 
 	return 0;
 }
