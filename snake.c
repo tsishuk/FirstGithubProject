@@ -1,12 +1,3 @@
-/*************************************************************************
-*
-* Purpose: Clear the screen with VT100 escape codes. This can be done
-* with conio.h on PCs - non standard code. Or curses.h, bit of
-* a fag...
-* Author: M.J. Leslie
-* Date: 22-Jun-94
-*
-******************************************************************/
 #include <stdio.h>
 #include <termios.h>
 #include <unistd.h>
@@ -30,7 +21,7 @@ struct Point{
 	int Y;
 };
 
-//struct Point snake = {20,10};
+
 struct Point fruit = {2,2};
 struct Point snake[MAX_COORD_SIZE];
 
@@ -52,28 +43,6 @@ int mygetch( ) {
 void clrscr(void);
 void print_grid(int X_MAX, int Y_MAX);
 
-
-void printSnakeInfo(void){
-	printf("\033[%d;%dH       ",21,42);	// Clear previous X:
-	printf("\033[%d;%dH",21,42);		// Set cursor on the current position
-	printf("X:%d",snake[head].X);		// Print X:
-	printf("\033[%d;%dH       ",22,42);	// Clear previous Y:
-	printf("\033[%d;%dH",22,42);		
-	printf("Y:%d",snake[head].Y);
-	printf("\033[%d;%dH           ",23,42);	// Clear previous length:
-	printf("\033[%d;%dH",23,42);		
-	printf("Length:%d",snake_length);
-}
-
-
-// void printFruitXY(void){
-// 	printf("\033[%d;%dH       ",15,42);	// Clear previous X:
-// 	printf("\033[%d;%dH",15,42);		// Set cursor on the current position
-// 	printf("FrX:%d",fruit.X);				// Print X:
-// 	printf("\033[%d;%dH       ",16,42);	// Clear previous Y:
-// 	printf("\033[%d;%dH",16,42);		
-// 	printf("FrY:%d",fruit.Y);
-// }
 
 void generateFruit(void){
 	fruit.X = 2+(rand()%(XMAX-1));
@@ -146,7 +115,7 @@ void* thread_func(void* arg){
 						if (CHECK){
 							CHECK = 0;
 							printf("\bX");
-							printf("\033[%d;%dH ",22,10);
+							printf("\033[%d;%dH ",XMAX+2,25);
 							printf("GAME OVER\n");
 							fflush(stdout);										// force clear console buffer
 							break;
@@ -159,6 +128,8 @@ void* thread_func(void* arg){
 			if ((snake[head].X==fruit.X)&&(snake[head].Y==fruit.Y)){
 				snake_length++;
 				generateFruit();
+				printf("\033[%d;%dH    ",XMAX+2,15);
+				printf("\033[%d;%dH %d",XMAX+2,14,snake_length*10);
 			}
 			// Erase previous snake tail
 			else {
@@ -205,7 +176,9 @@ int main()
 	fruit.Y = 2+(rand()%(YMAX-1));
 	printf("\033[%d;%dHF",fruit.X,fruit.Y);		// Paint new fruit
 	printf("\033[%d;%dH ",snake[0].X,snake[0].Y);
-	//sleep(1);
+	printf("\033[%d;%dH Total Score: 10", XMAX+2, 0);
+	printf("\033[%d;%dH Press (p) key for exit", 2, YMAX+2);
+	printf("\033[%d;%dH w,a,s,d - control", 3, YMAX+2);
 
 	pthread_create(tid, NULL, thread_func, NULL);
 
@@ -216,7 +189,7 @@ int main()
 		if (CHECK == 0){
 			pthread_cancel(*tid);
 			pthread_cancel(*tid2);
-			printf("\033[%d;%dH ",23,10);
+			printf("\033[%d;%dH ",XMAX+3,25);
 			printf("END OF GAME\n");
 			break;
 		}
