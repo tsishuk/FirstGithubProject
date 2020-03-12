@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define XMAX 20
-#define YMAX 40
+#define XMAX 10
+#define YMAX 20
 #define MAX_COORD_SIZE (XMAX*YMAX)
 
 int direction;
@@ -56,6 +56,17 @@ void generateFruit(void){
 	fruit.X = 2+(rand()%(XMAX-1));
 	fruit.Y = 2+(rand()%(YMAX-1));
 	printf("\033[%d;%dHF",fruit.X,fruit.Y);		// Paint new fruit
+}
+
+
+void printInfo(void)
+{
+	printf("\033[%d;%dH      ",4,YMAX+8);
+	printf("\033[%d;%dH %d",4,YMAX+8, tail);
+	printf("\033[%d;%dH      ",5,YMAX+8);
+	printf("\033[%d;%dH %d",5,YMAX+8, head);
+	printf("\033[%d;%dH      ",6,YMAX+8);
+	printf("\033[%d;%dH %d",6,YMAX+8, snake_length);
 }
 
 
@@ -145,6 +156,8 @@ void* thread_func(void* arg){
 	int i,j;
 
 	while(CHECK){
+		printf("\033[%d;%dH      ",7,YMAX+2);
+		printf("\033[%d;%dH0",7,YMAX+3);
 		my_mutex = 0;
 		head_old = head;
 		x = snake[head].X;
@@ -153,6 +166,7 @@ void* thread_func(void* arg){
 		if (head >= (MAX_COORD_SIZE-1))
 			head = 0;
 		snake[head] = snake[head_old];
+		printf("\033[%d;%dH1",7,YMAX+4);
 		switch(direction){
 			case 3:	(y==YMAX) ? (snake[head].Y = 2) : (snake[head].Y++);
 					break;
@@ -164,26 +178,44 @@ void* thread_func(void* arg){
 					break;
 		}
 
+		printf("\033[%d;%dH2",7,YMAX+5);
+
 		// // Check for self eating
 		for (i=tail;i!=head;i++)
-			for (j=i+1;j!=head;j++){
+			for (j=i;j!=head;j++){
+					if (i>=(MAX_COORD_SIZE-1)){
+						i=0;
+						printf("\033[%d;%dH i overflow",10,YMAX+5);
+					}
+					if (j>=(MAX_COORD_SIZE-1)){
+						j=0;
+						printf("\033[%d;%dH j overflow",11,YMAX+5);
+					}
 					if (i==j)
 						continue;
-					if (i>MAX_COORD_SIZE)
-						i=0;
-					if (j>MAX_COORD_SIZE) 
-						j=0;
+					// printf("\033[%d;%dH %d",8,YMAX+5, i);
+					// printf("\033[%d;%dH %d",9,YMAX+5, j);
+					//if (i>MAX_COORD_SIZE)
+					// if (i>=(MAX_COORD_SIZE-1))
+					// 	i=0;
+					// //if (j>MAX_COORD_SIZE) 
+					// if (j>=(MAX_COORD_SIZE-1))
+					// 	j=0;
 					if ((snake[i].X==snake[j].X)&&(snake[i].Y==snake[j].Y)){
 						if (CHECK){
 							CHECK = 0;
 							printf("\bX");
+							printf("\033[%d;%dH %d",8,YMAX+5, i);
+							printf("\033[%d;%dH %d",9,YMAX+5, j);
 							printf("\033[%d;%dH ",XMAX+2,25);
+							//printf("\033[%d;%dH!!!",7,YMAX+10);
 							printf("GAME OVER\n");
 							fflush(stdout);										// force clear console buffer
 							break;
 						}
 					}
 			}
+		
 
 		if (CHECK == 1){
 			// If HEAD == FRUIT (eat fruit)
@@ -201,6 +233,7 @@ void* thread_func(void* arg){
 				if (tail >= (MAX_COORD_SIZE-1))
 					tail = 0;
 			}
+			printInfo();
 
 			// Print new HEAD of snake
 			printf("\033[%d;%dH0",snake[head].X,snake[head].Y);	// Print new "HEAD" of snake
@@ -242,6 +275,12 @@ int main()
 	printf("\033[%d;%dH Total Score: 10", XMAX+2, 0);
 	printf("\033[%d;%dH Press (p) key for exit", 2, YMAX+2);
 	printf("\033[%d;%dH w,a,s,d - control", 3, YMAX+2);
+	printf("\033[%d;%dH Tail:", 4, YMAX+2);
+	printf("\033[%d;%dH Head:", 5, YMAX+2);
+	printf("\033[%d;%dH Leng:", 6, YMAX+2);
+	printf("\033[%d;%dH i:", 8, YMAX+2);
+	printf("\033[%d;%dH j:", 9, YMAX+2);
+
 
 	pthread_create(tid, NULL, thread_func, NULL);
 
