@@ -12,7 +12,6 @@
 int direction;
 int snake_length = 1, tail, head, head_old;
 int my_mutex = 0;
-int counter = 0;
 int CHECK = 1;
 
 
@@ -22,8 +21,17 @@ struct Point{
 };
 
 
+struct Element{
+	int X;
+	int Y;
+	struct Element* next;
+    struct Element* previous;
+};
+
+
 struct Point fruit = {2,2};
 struct Point snake[MAX_COORD_SIZE];
+struct Element elements[XMAX*YMAX];
 
 
 
@@ -51,6 +59,60 @@ void generateFruit(void){
 }
 
 
+// future fruit generator without generation on the body of snake
+void elementsPrint(void)
+{
+	int i,j;
+	int indeks_X;
+	int indeks_Y;
+	int indeks;
+	int begin = 0;
+	int random_indeks;
+	int counter = 0;
+	struct Element* next_element = &elements[0];
+	const int max = XMAX*YMAX - snake_length;
+    
+    // fill elements with init values
+    for (i=2;i<(XMAX);i++)
+        for (j=2;j<(YMAX);j++){
+            elements[counter].X = i;
+            elements[counter].Y = j;
+            elements[counter].next = &elements[counter+1];
+            elements[counter].previous = &elements[counter-1];
+            counter++;
+        }
+
+    // deleting snake coords from elements
+	for (i=0;i<snake_length;i++){
+		indeks_X = snake[i].X-1;
+		indeks_Y = snake[i].Y-1;
+		indeks = indeks_X*XMAX + indeks_Y;
+		
+        if (indeks == begin){
+			begin++;
+            next_element = (*next_element).next;
+        }
+		else {
+            (*elements[indeks].previous).next = elements[indeks].next;
+            (*elements[indeks].next).previous = elements[indeks].previous;
+		}
+	}
+
+	// // random fruit generation
+	// random_indeks = begin + (rand()%(max-1));
+
+	// for (i=begin;i<(random_indeks);i++){
+	// 	next_element = (*next_element).next;
+	// }
+
+	//fruit.X = (*next_element).X;
+	//fruit.Y = (*next_element).Y;
+	fruit.X = 2+(rand()%(XMAX-1));
+	fruit.Y = 2+(rand()%(YMAX-1));
+	printf("\033[%d;%dHF",fruit.X,fruit.Y);		// Paint new fruit
+}
+
+
 void* inputThreadFunc(void* arg){
 	int ch;
 
@@ -63,13 +125,13 @@ void* inputThreadFunc(void* arg){
 		}
 		if (my_mutex){
 			switch (ch){
-				case 'w': direction = 0;
+				case 'w': (direction==6) ? (direction = 6) : (direction = 0);
 						  break;
-				case 'd': direction = 3;
+				case 'd': (direction==9) ? (direction = 9) : (direction = 3);
 						  break;
-				case 's': direction = 6;
+				case 's': (direction==0) ? (direction = 0): (direction = 6);
 						  break;
-				case 'a': direction = 9;
+				case 'a': (direction==3) ? (direction = 3) : (direction = 9);
 						  break;					  					  
 			}
 		}
@@ -127,6 +189,7 @@ void* thread_func(void* arg){
 			// If HEAD == FRUIT (eat fruit)
 			if ((snake[head].X==fruit.X)&&(snake[head].Y==fruit.Y)){
 				snake_length++;
+				//elementsPrint();
 				generateFruit();
 				printf("\033[%d;%dH    ",XMAX+2,15);
 				printf("\033[%d;%dH %d",XMAX+2,14,snake_length*10);
