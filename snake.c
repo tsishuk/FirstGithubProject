@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define XMAX 10
-#define YMAX 20
+#define XMAX 20
+#define YMAX 40
 #define MAX_COORD_SIZE (XMAX*YMAX)
 
 int direction;
@@ -53,30 +53,8 @@ void clrscr(void);
 void print_grid(int X_MAX, int Y_MAX);
 
 
-void generateFruit(void){
-	fruit.X = 2+(rand()%(XMAX-1));
-	fruit.Y = 2+(rand()%(YMAX-1));
-	printf("\033[%d;%dHF",fruit.X,fruit.Y);		// Paint new fruit
-}
-
-
-void printInfo(void)
-{
-	printf("\033[%d;%dH      ",4,YMAX+8);
-	printf("\033[%d;%dH %d",4,YMAX+8, tail);
-	printf("\033[%d;%dH      ",5,YMAX+8);
-	printf("\033[%d;%dH %d",5,YMAX+8, head);
-	printf("\033[%d;%dH      ",6,YMAX+8);
-	printf("\033[%d;%dH %d",6,YMAX+8, snake_length);
-	printf("\033[%d;%dH      ",9,YMAX+10);
-	printf("\033[%d;%dH %d",9,YMAX+10, snake[head].X);
-	printf("\033[%d;%dH      ",10,YMAX+10);
-	printf("\033[%d;%dH %d",10,YMAX+10, snake[head].Y);
-}
-
-
 // future fruit generator without generation on the body of snake
-void elementsPrint(void)
+void GenerateFood(void)
 {
 	int i,j;
 	static int i_counter;
@@ -108,7 +86,7 @@ void elementsPrint(void)
 			i=0;
 		indeks_X = snake[i].X-2;
 		indeks_Y = snake[i].Y-2;
-		indeks = indeks_X*(XMAX-1) + indeks_Y;
+		indeks = indeks_X*(YMAX-1) + indeks_Y;
 		
         if (indeks == begin){
 			begin++;
@@ -121,18 +99,14 @@ void elementsPrint(void)
 	}
 
 	// random fruit generation
-	//random_indeks = begin + (rand()%(max-1));
 	random_indeks = rand()%(max-1);
 
-	//for (i=begin;i<(random_indeks);i++){
 	for (i=0;i<(random_indeks);i++){
 		first_element = (*first_element).next;
 	}
 
 	fruit.X = (*first_element).X;
 	fruit.Y = (*first_element).Y;
-	//fruit.X = 2+(rand()%(XMAX-1));
-	//fruit.Y = 2+(rand()%(YMAX-1));
 	printf("\033[%d;%dHF",fruit.X,fruit.Y);		// Paint new fruit
 }
 
@@ -195,8 +169,7 @@ void* thread_func(void* arg){
 			// If HEAD == FRUIT (eat fruit)
 			if ((snake[head].X==fruit.X)&&(snake[head].Y==fruit.Y)){
 				snake_length++;
-				//generateFruit();
-				elementsPrint();
+				GenerateFood();
 				printf("\033[%d;%dH    ",XMAX+2,15);
 				printf("\033[%d;%dH %d",XMAX+2,14,snake_length*10);
 			}
@@ -208,12 +181,11 @@ void* thread_func(void* arg){
 					tail = 0;
 			}
 
-			printInfo();
-
 			if (snake_length>1)
-				printf("\033[%d;%dHo",snake[head_old].X,snake[head_old].Y);	// Print new "HEAD" of snake
+				printf("\033[%d;%dHo",snake[head_old].X,snake[head_old].Y);	// Print old "HEAD" of snake with little 'o'
+			
 			// Print new HEAD of snake
-			printf("\033[%d;%dHO",snake[head].X,snake[head].Y);	// Print new "HEAD" of snake
+			printf("\033[%d;%dHO",snake[head].X,snake[head].Y);	// Print new "HEAD" of snake with big 'O'
 
 			if (snake_length>4){	// because <4 cant eat itself
 				i_counter = 0;
@@ -225,7 +197,6 @@ void* thread_func(void* arg){
 						if (CHECK){
 							CHECK = 0;
 							printf("\bX");
-							printf("\033[%d;%dH %d",8,YMAX+5, i);
 							printf("\033[%d;%dH ",XMAX+2,25);
 							printf("GAME OVER\n");
 							fflush(stdout);			// force clear console buffer
@@ -272,12 +243,6 @@ int main()
 	printf("\033[%d;%dH Total Score: 10", XMAX+2, 0);
 	printf("\033[%d;%dH Press (p) key for exit", 2, YMAX+2);
 	printf("\033[%d;%dH w,a,s,d - control", 3, YMAX+2);
-	printf("\033[%d;%dH Tail:", 4, YMAX+2);
-	printf("\033[%d;%dH Head:", 5, YMAX+2);
-	printf("\033[%d;%dH Leng:", 6, YMAX+2);
-	printf("\033[%d;%dH i:", 8, YMAX+2);
-	printf("\033[%d;%dH HEAD.X:", 9, YMAX+2);
-	printf("\033[%d;%dH HEAD.Y:", 10, YMAX+2);
 
 	pthread_create(tid, NULL, thread_func, NULL);
 	pthread_create(tid2, NULL, inputThreadFunc, NULL);
