@@ -32,7 +32,7 @@ struct Element{
 
 struct Point fruit = {2,2};
 struct Point snake[MAX_COORD_SIZE];
-struct Element elements[XMAX*YMAX];
+struct Element elements[(XMAX-1)*(YMAX-1)];
 
 
 
@@ -68,6 +68,10 @@ void printInfo(void)
 	printf("\033[%d;%dH %d",5,YMAX+8, head);
 	printf("\033[%d;%dH      ",6,YMAX+8);
 	printf("\033[%d;%dH %d",6,YMAX+8, snake_length);
+	printf("\033[%d;%dH      ",9,YMAX+10);
+	printf("\033[%d;%dH %d",9,YMAX+10, snake[head].X);
+	printf("\033[%d;%dH      ",10,YMAX+10);
+	printf("\033[%d;%dH %d",10,YMAX+10, snake[head].Y);
 }
 
 
@@ -75,18 +79,21 @@ void printInfo(void)
 void elementsPrint(void)
 {
 	int i,j;
+	static int i_counter;
 	int indeks_X;
 	int indeks_Y;
 	int indeks;
 	int begin = 0;
 	int random_indeks;
 	int counter = 0;
-	struct Element* next_element = &elements[0];
-	const int max = XMAX*YMAX - snake_length;
+	struct Element* first_element = &elements[0];
+	const int max = (XMAX-1)*(YMAX-1) - snake_length;
+
+	i_counter = 0;
     
     // fill elements with init values
-    for (i=2;i<(XMAX);i++)
-        for (j=2;j<(YMAX);j++){
+    for (i=2;i<=XMAX;i++)
+        for (j=2;j<=YMAX;j++){
             elements[counter].X = i;
             elements[counter].Y = j;
             elements[counter].next = &elements[counter+1];
@@ -95,14 +102,17 @@ void elementsPrint(void)
         }
 
     // deleting snake coords from elements
-	for (i=0;i<snake_length;i++){
-		indeks_X = snake[i].X-1;
-		indeks_Y = snake[i].Y-1;
-		indeks = indeks_X*XMAX + indeks_Y;
+	for (i=tail;i_counter<snake_length;i++){
+		i_counter++;
+		if (i>=(MAX_COORD_SIZE-1))
+			i=0;
+		indeks_X = snake[i].X-2;
+		indeks_Y = snake[i].Y-2;
+		indeks = indeks_X*(XMAX-1) + indeks_Y;
 		
         if (indeks == begin){
 			begin++;
-            next_element = (*next_element).next;
+            first_element = (*first_element).next;
         }
 		else {
             (*elements[indeks].previous).next = elements[indeks].next;
@@ -110,17 +120,19 @@ void elementsPrint(void)
 		}
 	}
 
-	// // random fruit generation
-	// random_indeks = begin + (rand()%(max-1));
+	// random fruit generation
+	//random_indeks = begin + (rand()%(max-1));
+	random_indeks = rand()%(max-1);
 
-	// for (i=begin;i<(random_indeks);i++){
-	// 	next_element = (*next_element).next;
-	// }
+	//for (i=begin;i<(random_indeks);i++){
+	for (i=0;i<(random_indeks);i++){
+		first_element = (*first_element).next;
+	}
 
-	//fruit.X = (*next_element).X;
-	//fruit.Y = (*next_element).Y;
-	fruit.X = 2+(rand()%(XMAX-1));
-	fruit.Y = 2+(rand()%(YMAX-1));
+	fruit.X = (*first_element).X;
+	fruit.Y = (*first_element).Y;
+	//fruit.X = 2+(rand()%(XMAX-1));
+	//fruit.Y = 2+(rand()%(YMAX-1));
 	printf("\033[%d;%dHF",fruit.X,fruit.Y);		// Paint new fruit
 }
 
@@ -183,7 +195,8 @@ void* thread_func(void* arg){
 			// If HEAD == FRUIT (eat fruit)
 			if ((snake[head].X==fruit.X)&&(snake[head].Y==fruit.Y)){
 				snake_length++;
-				generateFruit();
+				//generateFruit();
+				elementsPrint();
 				printf("\033[%d;%dH    ",XMAX+2,15);
 				printf("\033[%d;%dH %d",XMAX+2,14,snake_length*10);
 			}
@@ -249,6 +262,7 @@ int main()
     tid2 = (pthread_t*)malloc(sizeof(pthread_t)); 
 
 	printf ("\e[?25l");	//set cursor INVISIBLE
+
 	clrscr();
 	print_grid(XMAX,YMAX);
 	fruit.X = 2+(rand()%(XMAX-1));
@@ -262,10 +276,10 @@ int main()
 	printf("\033[%d;%dH Head:", 5, YMAX+2);
 	printf("\033[%d;%dH Leng:", 6, YMAX+2);
 	printf("\033[%d;%dH i:", 8, YMAX+2);
-
+	printf("\033[%d;%dH HEAD.X:", 9, YMAX+2);
+	printf("\033[%d;%dH HEAD.Y:", 10, YMAX+2);
 
 	pthread_create(tid, NULL, thread_func, NULL);
-
 	pthread_create(tid2, NULL, inputThreadFunc, NULL);
 	
 	while(1){
@@ -283,6 +297,7 @@ int main()
 	tcgetattr( STDIN_FILENO, &oldt );
 	oldt.c_lflag |= ( ICANON | ECHO );
 	tcsetattr( STDIN_FILENO, TCSANOW, &oldt );
+
 	printf ("\e[?25h");		//set cursor VISIBLE
 
 	return 0;
